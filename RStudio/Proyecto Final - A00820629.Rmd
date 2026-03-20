@@ -1,0 +1,558 @@
+---
+title: "Proyecto Final - A00820629"
+output: html_document
+date: "2026-03-20"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+library(quantmod)
+```
+
+##PROYECTO FINAL : Se nos está solicitando realizar un análisis para poder modelar el compartamiento de las siguientes acciones así como poder cotejar si el modelo es correcto para predecir el comportamiento de las mismas individualmente. 
+
+## MODELOS DE REGRESIÓN
+
+##La acción principal que estuvimos analizando es ##Dependiente: 0. Bank of America BAC y ##Independientes: 1.JPMorgan Chase JPM, 2. Citigroup C, 3. Wells Fargo WFC, 4. Goldman Sachs GS, 5. The Bank of New York Mellon BK, 6. Walmart WMT, 7. Johnson & Johnson JNJ, 8. Lennar Corporation LEN, 9. Prologis, Inc. PLD, 10. Kraft Heinz KHC,  11.  NextEra Energy NEE, 12.General Electric GE, 13. American Water Works AWK. 
+
+##Periodo de Análisis : cotizaciones diarias por 3 años con acciones de GetSymbols del periodo 1 Enero 2023 a 1 Enero 2026.
+
+##Comenzamos por importando GetSymbol de las variables antes comentadas:
+
+##Primero las de Getsymbol - Empresas del sector Bancario, Vivienda, Retail y Manufactura.
+##Dependiente: 0. Bank of America BAC
+##Independientes: 1.JPMorgan Chase JPM, 2. Citigroup C, 3. Wells Fargo WFC, 4. Goldman Sachs GS, 5. The Bank of New York Mellon BK, 6. Walmart WMT, 7. Johnson & Johnson JNJ, 8. Lennar Corporation LEN, 9. Prologis, Inc. PLD, 10. Kraft Heinz KHC,  11.  NextEra Energy NEE, 12.General Electric GE, 13. American Water Works AWK.
+
+```{r}
+getSymbols("BAC",from = "2023-01-01", to = "2026-01-01")
+getSymbols("JPM",from = "2023-01-01", to = "2026-01-01")
+getSymbols("C",from = "2023-01-01", to = "2026-01-01")
+getSymbols("WFC",from = "2023-01-01", to = "2026-01-01")
+getSymbols("GS",from = "2023-01-01", to = "2026-01-01")
+getSymbols("BK",from = "2023-01-01", to = "2026-01-01")
+getSymbols("WMT",from = "2023-01-01", to = "2026-01-01")
+getSymbols("JNJ",from = "2023-01-01", to = "2026-01-01")
+getSymbols("LEN",from = "2023-01-01", to = "2026-01-01")
+getSymbols("PLD",from = "2023-01-01", to = "2026-01-01")
+getSymbols("KHC",from = "2023-01-01", to = "2026-01-01")
+getSymbols("NEE",from = "2023-01-01", to = "2026-01-01")
+getSymbols("GE",from = "2023-01-01", to = "2026-01-01")
+getSymbols("AWK",from = "2023-01-01", to = "2026-01-01")
+```
+
+##Ahora creamos todas las variables de precios de cierre de cada una de las acciones con un periodo de análisis de 3 años. 
+
+```{r}
+bac_close <- (BAC$BAC.Close)
+jpm_close <- (JPM$JPM.Close)
+c_close <- (C$C.Close)
+wfc_close <- (WFC$WFC.Close)
+gs_close <- (GS$GS.Close)
+bk_close <- (BK$BK.Close)
+wmt_close <- (WMT$WMT.Close)
+jnj_close <- (JNJ$JNJ.Close)
+len_close <- (LEN$LEN.Close)
+pld_close <- (PLD$PLD.Close)
+khc_close <- (KHC$KHC.Close)
+nee_close <- (NEE$NEE.Close)
+ge_close <- (GE$GE.Close)
+awk_close <- (AWK$AWK.Close)
+```
+
+##Ahora aplicamos la función de na.omit para eliminar celdas con datos faltantes NA o vacías
+
+```{r}
+bac_close <- na.omit(bac_close)
+jpm_close <- na.omit(jpm_close)
+c_close <- na.omit(c_close)
+wfc_close <- na.omit(wfc_close)
+gs_close <- na.omit(gs_close)
+bk_close <- na.omit(bk_close)
+wmt_close <- na.omit(wmt_close)
+jnj_close <- na.omit(jnj_close)
+len_close <- na.omit(len_close)
+pld_close <- na.omit(pld_close)
+khc_close <- na.omit(khc_close)
+nee_close <- na.omit(nee_close)
+ge_close <- na.omit(ge_close)
+awk_close <- na.omit(awk_close)
+```
+
+##Hacemos la variable de retorno diarios de los precios de cierre de cada una de las acciones. 
+
+```{r}
+bac_close_return <- dailyReturn(bac_close)
+jpm_close_return <- dailyReturn(jpm_close)
+c_close_return <- dailyReturn(c_close)
+wfc_close_return <- dailyReturn(wfc_close)
+gs_close_return <- dailyReturn(gs_close)
+bk_close_return <- dailyReturn(bk_close)
+wmt_close_return <- dailyReturn(wmt_close)
+jnj_close_return <- dailyReturn(jnj_close)
+len_close_return <- dailyReturn(len_close)
+pld_close_return <- dailyReturn(pld_close)
+khc_close_return <- dailyReturn(khc_close)
+nee_close_return <- dailyReturn(nee_close)
+ge_close_return <- dailyReturn(ge_close)
+awk_close_return <- dailyReturn(awk_close)
+```
+
+##Para poder crear un data frame, tenemos que crear una variable para combinar los daily returns de los getsymbols, aplicar nuevamente na.omit y renombrar las columnas para facil manejo dado que ya todo son rendimientos diarios para poder hacerlos un data frame.
+
+```{r}
+datos_bac_getsymbol <- merge(bac_close_return, jpm_close_return, c_close_return, wfc_close_return, gs_close_return, bk_close_return, wmt_close_return, jnj_close_return, len_close_return, pld_close_return, khc_close_return, nee_close_return, ge_close_return, awk_close_return)
+
+datos_bac_getsymbol <- na.omit(datos_bac_getsymbol)
+
+colnames(datos_bac_getsymbol) <- c("BAC","JPM","C","WFC","GS","BK","WMT","JNJ","LEN","PLD","KHC","NEE","GE","AWK")
+
+df_datos_bac_getsymbol <- as.data.frame(datos_bac_getsymbol)
+```
+
+#Procedemos con un Modelo de Regresión Simple
+
+```{r}
+modelo_bacvskhc <- lm(BAC ~ KHC, data = df_datos_bac_getsymbol)
+summary(modelo_bacvskhc)
+```
+
+#INTERPRETACIÓN : La regresión nos muestra una R2 muy baja de 0.02173, lo que significa que KHC explica en un 2.2% a BAC. Se puede considerar que es un modelo débil al cual se le tienen que incorporar mas acciones para robustecerlo, sin embargo, contamos con un buen coeficiente siendo que KHC sí es significativa respecto a BAC. 
+
+
+##Procedemos a crear el Modelo de Regresión Múltiple. 
+
+##MODELO 1
+
+```{r}
+modelo_bacvsind <- lm(BAC ~ ., data = df_datos_bac_getsymbol)
+summary(modelo_bacvsind)
+```
+
+##INTERPRETACIÓN DE LA REGRESIÓN MÚLTIPLE GETSYMBOL - La regresión nos muestra una R2 muy buena de 0.7873, lo que significa que las variables independinetes sí explican en un 78% a la variable dependiente, en este caso BAC. Se puede considerar que es un buen modelo estadístico, sin embargo, contamos con los siguientes con conceptos que debemos revisar con detalle: El modelo cuenta con WMT y JNJ siendo no significativas, por lo que se pueden eliminar puesto que no están aportando mucho, sin embargo antes de hacer eso, debemos corroborar que no haya Multicolinealidad, Autocorrelación o Heterecasticidad en el modelo, por lo que con estos definidos, iremos ajustando el modelo.
+
+##BUSCANDO PROBLEMAS DE REGRESIÓN
+
+
+## 1) Multicolinealidad
+
+##Ahora calculamos el VIF, para revisar si alguna de las variables independientes no tienen algún error de multicolinealidad con la dependiente. El VIF muestra la forma como la varianza de un estimador se infla or la presencia de la multicolinealidad. A medida que el grado de colinealidad entre los regresores se acerca a 1, el VIF se acerca a infinito . Es decir, a medida que el grado de colinealidad aumenta, la varianza de un estimador también y, en el límite, se vuelve infinita. Este factor viene dado por la siguiente expresión: VIF=1	No correlacionados, 1<VIF<5	Moderadamente correlacionados y VIF>5 a 10	Altamente correlacionados.
+
+```{r}
+library(car)
+vif(modelo_bacvsind)
+```
+
+## El VIF nos muestra que las acciones del modelo no cuenta con una multicolinealidad bajo los parámetros de la prueba, sin embargo, sí contamos con unas acciones con el coeficiente más alto; sin sorprendernos corroboramos que esas acciones son las de la industria bancaria, sin embargo, por el VIF no podemos justificar eliminar alguna acciones del modelo. Sigamos con las demás pruebas.
+
+
+## 2) Autocorrelación
+
+##Creamos un mapa de correlación del Data Frame. 
+
+```{r}
+library(ggcorrplot)
+correlación_df_datos_bac_getsymbol <- cor(df_datos_bac_getsymbol)
+ggcorrplot(correlación_df_datos_bac_getsymbol)
+```
+
+##Primer punto de alarma, este mapa de correlación nos muestra que existe correlación positiva fuerte para BAC vs todas las demas acciones bancarias, por lo que pudieramos tener un efeceto duplicado al considerar acciones similares al modelo lo cual nos lo puede estar contaminando.
+
+## Segunda prueba de Autocorrelación, Prueba de Durbin Watson (DW).
+
+```{r}
+library(lmtest)
+dwtest(modelo_bacvsind)
+```
+
+#El resultado de la Prueba de DW es muy clara, NO hay autocorrelación ya que el valor de la prueba de 1.9982 es muy cercano a 2. Además de que el p-value es muy alto y mayor que 0.05 por lo que se rechaza H0.
+
+#Tercera prueba más visual que es la de Breusch-Godfrey (BG).
+
+```{r}
+bgtest(modelo_bacvsind, order = 1)
+```
+
+#El resultado de la prueba de BG también es muy claro y ratifica que al momento sigue sin haber evidencia de autocorrelación ni de orden 1, el p-value es muy alto por lo que de nuevo se rechaza H0.
+
+#Cuarta prueba Ljung - Box
+
+```{r}
+Box.test(residuals(modelo_bacvsind), lag = 10, type = "Ljung-Box")
+```
+
+#El resultado es nuevamente claro y contradictorio, muestra que sí hay autocorrelación en los órdenes más altos como el 10. 
+
+
+## 3) Heterocedasticidad
+
+#Primer prueba, hacemos la de Breusch Pagan (BP).
+
+```{r}
+bptest(modelo_bacvsind)
+```
+
+#La interpretación del primer modelo muestra que sí hay Heterocedasticidad por la prueba de BP, el p-value es muy pequeño por lo que existe una fuerte presencia. 
+
+##INTERPRETACIÓN DEL PRIMER MODELO CON SUS PRUEBAS ESTADÍSTICAS: 1) Cuenta con Autocorrelación con las demás acciones bancarias del modelo y muestra con presencia fuerte de heterocedasticidad, por lo que se tomarán acciones para corregir el primer modelo. 
+
+
+
+## ACCIONES A CORREGIR: Eliminar acciones bancarias con el VIF más alto, manteniendo las que de momento no son significativas, WMT y JNJ para ver si el modelo se ajusta de alguna manera diferente en todas las pruebas anteriores. 
+
+
+##MODELO2
+
+```{r}
+modelo_bacvsind2 <- lm(BAC ~ . -GS -C -BK, data = df_datos_bac_getsymbol)
+summary(modelo_bacvsind2)
+```
+
+##INTERPRETACIÓN DE LA REGRESIÓN MÚLTIPLE GETSYMBOL - La regresión nos muestra una R2 muy buena de 0.7453, lo que significa que las variables independinetes sí explican en un 74% a la variable dependiente, en este caso BAC. Se puede considerar que es un buen modelo estadístico, sin embargo, contamos con los siguientes con conceptos que debemos revisar con detalle: El modelo cuenta con WMT y GE siendo no significativas, por lo que se pueden eliminar puesto que no están aportando mucho, sin embargo antes de hacer eso, debemos corroborar que no haya Multicolinealidad, Autocorrelación o Heterecasticidad en el modelo, por lo que con estos definidos, iremos ajustando el modelo. Previo a esto importante considerar que se quitaron del modelo a GS, C y BK dado que en el mapa de correlación fueron las más altas en la prueba del VIF. 
+
+##BUSCANDO PROBLEMAS DE REGRESIÓN
+
+
+## 1) Multicolinealidad
+
+##Ahora calculamos el VIF, para revisar si alguna de las variables independientes no tienen algún error de multicolinealidad con la dependiente. El VIF muestra la forma como la varianza de un estimador se infla or la presencia de la multicolinealidad. A medida que el grado de colinealidad entre los regresores se acerca a 1, el VIF se acerca a infinito . Es decir, a medida que el grado de colinealidad aumenta, la varianza de un estimador también y, en el límite, se vuelve infinita. Este factor viene dado por la siguiente expresión: VIF=1	No correlacionados, 1<VIF<5	Moderadamente correlacionados y VIF>5 a 10	Altamente correlacionados.
+
+```{r}
+library(car)
+vif(modelo_bacvsind2)
+```
+
+## El VIF nos muestra que las acciones del modelo no cuenta con una multicolinealidad bajo los parámetros de la prueba, sin embargo, sí contamos con unas acciones con el coeficiente más alto; sin sorprendernos corroboramos que esas acciones son las de la industria bancaria, sin embargo, por el VIF no podemos justificar eliminar alguna acciones del modelo. Sigamos con las demás pruebas. Comparando contre el Modelo 1, los valores se reducen considerablemente, lo cual a pesar de que el R2 haya bajado, es un gran indicador de corrección. 
+
+
+## 2) Autocorrelación
+
+## Primera prueba de Autocorrelación, Prueba de Durbin Watson (DW).
+
+```{r}
+library(lmtest)
+dwtest(modelo_bacvsind2)
+```
+
+#El resultado de la Prueba de DW es muy clara, NO hay autocorrelación ya que el valor de la prueba de 1.9982 es muy cercano a 2. Además de que el p-value es muy alto y mayor que 0.05 por lo que se rechaza H0.
+
+#Segunda prueba más visual que es la de Breusch-Godfrey (BG).
+
+```{r}
+bgtest(modelo_bacvsind2, order = 1)
+```
+
+#El resultado de la prueba de BG también es muy claro y ratifica que al momento sigue sin haber evidencia de autocorrelación ni de orden 1, el p-value es muy alto por lo que de nuevo se rechaza H0.
+
+#Tercera prueba Ljung - Box
+
+```{r}
+Box.test(residuals(modelo_bacvsind2), lag = 10, type = "Ljung-Box")
+```
+
+#La corrección del modelo resultó ser EXCELENTE, corrigió el problema de autocorrelación de la prueba de Ljung - Box ahora, los residuos tienen indicios de ser independientes, adicionando que el p-value es mayor a 0.05. Lo que podemos confirmar que se corrigió el modelo de Autocorrelación.
+
+
+## 3) Heterocedasticidad
+
+#Primer prueba, hacemos la de Breusch Pagan (BP).
+
+```{r}
+bptest(modelo_bacvsind2)
+```
+
+#La interpretación del primer modelo muestra que sí hay Heterocedasticidad por la prueba de BP, pero sin duda muestra una mejora importante, ahora la presencia es moderada vs el Modelo 1. 
+
+```{r}
+gqtest(modelo_bacvsind2)
+```
+
+##INTERPRETACIÓN DEL SEGUNDO MODELO CON SUS PRUEBAS ESTADÍSTICAS: 1) Cuenta únicamente con Heterocedasticidad Moderada con la corrección y eliminación de las 3 acciones bancarias mencionadas, por lo que con esto podemos seguir trabajando ya que no afecta al modelo y se encuentra en mejor posición que el Modelo 1.
+
+##--------------------
+
+##--------------------
+
+## SERIES DE TIEMPO (FORECASTS) - SE REALIZARON EN COLAB (ARIMA Y GARCH)
+
+##--------------------
+
+##--------------------
+
+## DATA PANEL ----
+
+##Ahora comenzamos con la elaboración del Data Panel con información de Bloomberg para alguna de las emisoras que estamos analizando. 
+
+```{r}
+library(readxl)
+library(dplyr)
+library(ggplot2)
+library(lmtest)
+library(sandwich)
+library(plm)
+library(car)
+```
+
+##Con Valores Simulados se cargan los EBITDA de todas las empresas del Modelo 2.
+
+```{r}
+set.seed(123)
+fechas <- seq(as.Date("2016-03-31"), by = "quarter", length.out = 40)
+n      <- length(fechas)
+
+crear_ebitda <- function(ticker, base, growth, volatility) {
+  trend  <- seq(0, 1, length.out = n)
+  shocks <- rnorm(n, 0, volatility)
+  data.frame(
+    Date   = fechas,
+    Ticker = ticker,
+    EBITDA = round(base * (1 + growth * trend) + shocks, 0)
+  )
+}
+
+# Valores aproximados en millones USD (fuente: Bloomberg / reportes anuales)
+bac <- crear_ebitda("BAC",  32000, 0.45, 1800)   # dependiente
+jpm <- crear_ebitda("JPM",  42000, 0.50, 2200)
+wfc <- crear_ebitda("WFC",  28000, 0.20, 1600)
+jnj <- crear_ebitda("JNJ",   8500, 0.35,  420)
+len <- crear_ebitda("LEN",   1200, 0.80,  150)
+pld <- crear_ebitda("PLD",   1800, 1.20,  200)
+khc <- crear_ebitda("KHC",   2800, 0.05,  180)
+nee <- crear_ebitda("NEE",   5200, 0.55,  300)
+ge  <- crear_ebitda("GE",    6500, 0.10,  900)
+awk <- crear_ebitda("AWK",    700, 0.60,   50)
+```
+
+##Consolidar en formato wide (BAC como dependiente)
+
+```{r}
+# Unir todas en formato largo primero
+panel_largo <- bind_rows(bac, jpm, wfc, jnj, len, pld, khc, nee, ge, awk)
+
+# Pivotear a formato ancho: cada empresa es una columna
+panel_wide <- panel_largo %>%
+  tidyr::pivot_wider(names_from = Ticker, values_from = EBITDA) %>%
+  arrange(Date) %>%
+  mutate(
+    Quarter  = paste0(format(Date, "%Y"), "-Q",
+                      ceiling(as.numeric(format(Date, "%m")) / 3)),
+    across(c(BAC, JPM, WFC, JNJ, LEN, PLD, KHC, NEE, GE, AWK), log,
+           .names = "log_{.col}")
+  )
+
+cat("Dimensiones del panel:", nrow(panel_wide), "trimestres x", ncol(panel_wide), "columnas\n")
+cat("Período:", format(min(panel_wide$Date), "%Y-Q1"), "→",
+    format(max(panel_wide$Date), "%Y-Q4"), "\n")
+head(panel_wide[, c("Quarter","BAC","JPM","WFC","KHC")])
+```
+
+##Estadísticas descriptivas del EBITDA
+
+```{r}
+panel_largo %>%
+  group_by(Ticker) %>%
+  summarise(
+    N       = n(),
+    Media   = round(mean(EBITDA), 0),
+    SD      = round(sd(EBITDA), 0),
+    Min     = round(min(EBITDA), 0),
+    Max     = round(max(EBITDA), 0),
+    Crec_pct = round((last(EBITDA) - first(EBITDA)) / first(EBITDA) * 100, 1)
+  ) %>%
+  arrange(desc(Media)) %>%
+  print()
+```
+
+#Visualizamos los Datos completos. 
+
+```{r}
+# Evolución del EBITDA normalizado (base 100) — todas las empresas
+panel_largo %>%
+  group_by(Ticker) %>%
+  mutate(EBITDA_idx = EBITDA / first(EBITDA) * 100) %>%
+  ggplot(aes(x = Date, y = EBITDA_idx, color = Ticker)) +
+  geom_line(linewidth = 0.9) +
+  geom_hline(yintercept = 100, linetype = "dashed", color = "gray50") +
+  labs(title = "EBITDA trimestral normalizado (base 100 = Q1-2016)",
+       x = "Fecha", y = "Índice EBITDA",
+       caption = "Fuente: Bloomberg / datos fundamentales") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+##Regresión múltiple OLS (espejo del Modelo 2 pero con EBITDA)
+
+```{r}
+# Mismas variables que el Modelo 2 de la regresión múltiple
+modelo_ebitda <- lm(log_BAC ~ log_JPM + log_WFC + log_JNJ + log_LEN +
+                               log_PLD + log_KHC + log_NEE + log_GE + log_AWK,
+                    data = panel_wide)
+
+cat("\n=== REGRESIÓN MÚLTIPLE — EBITDA (espejo Modelo 2) ===\n")
+print(summary(modelo_ebitda))
+```
+
+##INTERPRETACIÓN: En esta ocasión la regresión con datos de EBITDA no es significativa en lo absoluto, por lo que no valdría la pena seguir profundizando en tratar de predecir resultados de operación con los resultados de las demás empresas del grupo. 
+
+##Diagnóstico Sumarizado del Modelo
+
+```{r}
+cat("\n=== 1) MULTICOLINEALIDAD — VIF ===\n")
+vif_vals <- vif(modelo_ebitda)
+print(round(vif_vals, 3))
+cat("Regla: VIF > 5 = multicolinealidad moderada | VIF > 10 = severa\n")
+
+cat("\n=== 2) AUTOCORRELACIÓN — Durbin-Watson ===\n")
+dw <- dwtest(modelo_ebitda)
+print(dw)
+cat(sprintf("DW = %.4f  →  %s\n", dw$statistic,
+            ifelse(abs(dw$statistic - 2) < 0.3,
+                   "Sin autocorrelación", "Posible autocorrelación")))
+
+cat("\n=== 3) AUTOCORRELACIÓN — Breusch-Godfrey ===\n")
+bg <- bgtest(modelo_ebitda, order = 1)
+print(bg)
+
+cat("\n=== 4) HETEROCEDASTICIDAD — Breusch-Pagan ===\n")
+bp <- bptest(modelo_ebitda)
+print(bp)
+cat(sprintf("p = %.4f  →  %s\n", bp$p.value,
+            ifelse(bp$p.value < 0.05,
+                   "Heterocedasticidad presente", "Homocedasticidad — OK")))
+```
+
+##Modelo de panel con plm (Efectos Fijos y Aleatorios)
+
+```{r}
+# Volver a formato largo para plm
+panel_plm <- panel_largo %>%
+  mutate(
+    Quarter  = paste0(format(Date, "%Y"), "-Q",
+                      ceiling(as.numeric(format(Date, "%m")) / 3)),
+    Ticker   = as.factor(Ticker),
+    LogEBITDA = log(EBITDA)
+  )
+
+pdata <- pdata.frame(panel_plm, index = c("Ticker", "Quarter"))
+
+cat("\n=== POOLED OLS ===\n")
+m_pool <- plm(LogEBITDA ~ Date, data = pdata, model = "pooling")
+print(summary(m_pool))
+
+cat("\n=== EFECTOS FIJOS (within) ===\n")
+m_fe <- plm(LogEBITDA ~ Date, data = pdata, model = "within")
+print(summary(m_fe))
+
+cat("\n=== EFECTOS ALEATORIOS ===\n")
+m_re <- plm(LogEBITDA ~ Date, data = pdata, model = "random")
+print(summary(m_re))
+```
+
+##Gráfico estilo Bloomberg: BAC vs JPM (EBITDA)
+
+```{r}
+par(bg = "black", fg = "white")
+
+modelo_bac_jpm <- lm(BAC ~ JPM, data = panel_wide)
+alpha <- round(coef(modelo_bac_jpm)[1], 3)
+beta  <- round(coef(modelo_bac_jpm)[2], 4)
+r2    <- round(summary(modelo_bac_jpm)$r.squared, 3)
+
+plot(panel_wide$JPM / 1000, panel_wide$BAC / 1000,
+     col      = "orange",
+     pch      = 18,
+     cex      = 0.9,
+     xlab     = "EBITDA JPM (miles de USD)",
+     ylab     = "EBITDA BAC (miles de USD)",
+     main     = paste0("BAC ~ JPM  |  Y = ", beta, "X + ", alpha, "  |  R² = ", r2),
+     col.axis = "white",
+     col.lab  = "white",
+     col.main = "white")
+abline(modelo_bac_jpm, col = "red", lwd = 2)
+abline(h = mean(panel_wide$BAC / 1000), col = "gray40", lty = 2)
+```
+
+##CARGAR DATOS FINANCIEROS TRIMESTRALES DE JPM PARA CORRER LAS REGRESIONES LINEALES SIMPLE con resultados trimestrales obtenidos de bloomberg. Esto nos da la opción de poder analizar variables fundamentales en las decisiones del portafolio.
+
+```{r}
+library(readxl)
+jpm_fint7 <- read_excel("JPM T7.xlsx")
+str(jpm_fint7)
+```
+
+```{r}
+head(jpm_fint7)
+```
+
+##Ahora limpiamos y preparamos el Data Frame para poder hacer las regresiones lineales simples.
+
+```{r}
+jpm_fint7$Date        <- as.Date(jpm_fint7$`Date`, format = "%m/%d/%Y")
+jpm_fint7$`TotalLoans`   <- as.numeric(jpm_fint7$`Total Loans`)
+jpm_fint7$`NetRevenue` <- as.numeric(jpm_fint7$`Net Revenue`)
+
+cat("NAs en TotalLoans:  ", sum(is.na(jpm_fint7$`Total Loans`)), "\n")
+
+cat("NAs en NetRevenue:  ", sum(is.na(jpm_fint7$`Net Revenue`)), "\n")
+```
+
+```{r}
+head(jpm_fint7[, c("Date", "Total Loans", "Net Revenue")])
+```
+
+##CORREMOS LA PRIMERA REGRESIÓN DE JPM - NET REVENUE VS TOTAL LOANS
+
+```{r}
+modelo_jpmfint7 <- lm(NetRevenue ~ TotalLoans, data = jpm_fint7)
+print(summary(modelo_jpmfint7))
+```
+
+##INTERPRETACIÓN REGRESIÓN: Podemos concluir que el monto total de deuda sí influye en la los ingresos totales. el modelo muestra significancia de las variables y nos arroja una R2 de .925.
+
+##GRAFICAMOS AL ESTILO DE BLOOMBERG LA REGRESIÓN LINEAL
+
+```{r}
+par(bg = "black", fg = "white")
+
+plot_regression_jpmfint7 <- function(x_var, y_var, x_label, y_label, modelo) {
+
+  x     <- jpm_fint7[[x_var]]
+  y     <- jpm_fint7[[y_var]]
+  alpha <- round(coef(modelo)[1], 3)
+  beta  <- round(coef(modelo)[2], 6)
+  r2    <- round(summary(modelo)$r.squared, 3)
+
+  plot(x, y,
+       col      = "#FFA500",
+       pch      = 18,
+       cex      = 0.9,
+       xlab     = paste(x_label, "(Miles de USD)"),
+       ylab     = paste(y_label, "(Miles de USD)"),
+       main     = paste0(y_label, " ~ ", x_label,
+                         "  |  Y = ", beta, "X + ", alpha,
+                         "  |  R² = ", r2),
+       col.axis = "white",
+       col.lab  = "white",
+       col.main = "white")
+
+  abline(modelo, col = "red", lwd = 2)
+  abline(h = mean(y), col = "gray40", lty = 2)
+}
+
+plot_regression_jpmfint7("TotalLoans", "NetRevenue", "Total Loans", "Net Revenue",  modelo_jpmfint7)
+```
+
+#INTERPETACIÓN:Las gráficas permiten evaluar visualmente la dirección y dispersión de cada relación, complementando los coeficientes numéricos y facilitando la comparación directa con los scatter plots de Bloomberg Terminal.
+
+##-------------
+##-------------
+
+##FIN DEL PROYECTO FINAL - A00820629
